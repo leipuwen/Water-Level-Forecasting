@@ -1,0 +1,81 @@
+{
+  "type": "FeatureCollection",
+  "features": [{
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名: 宇治（うじ）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606010</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府宇治市宇治里尻</p>",
+        "iconSize": [60, 60]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.8036111111111, 34.894444444444446]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名:  有市（ありいち）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	1362160400220</p><br/><p>水系名:	淀川</p><br/><p>河川名:	木津川</p><br/><p>所在地:	京都府相楽郡笠置町大字上有市小字根台５８</p>",
+        "iconSize": [50, 50]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.96444444444444, 34.7675]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名:  井戸（いど）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	1362160341321</p><br/><p>水系名:	淀川</p><br/><p>河川名:	桂川</p><br/><p>所在地:	京都府京都市右京区京北大野町横枕</p>",
+        "iconSize": [40, 40]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.68277777777777, 35.19138888888889]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名:  向島（むかいじま）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606040</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府京都市伏見区向島橋詰町</p>",
+        "iconSize": [40, 40]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.7697222222222, 34.92666666666667]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名: 淀（よど）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606060</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府久世郡久御山町大橋辺</p>",
+        "iconSize": [40, 40]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.71777777777777, 34.8975]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名: 宇治川三川（うじがわさんせん）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606070</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府八幡市橋本奥ノ町</p>",
+        "iconSize": [40, 40]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.68555555555557, 34.889722222222225]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "description": "<p>観測所名: 加茂（かも）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606190</p><br/><p>水系名:	淀川</p><br/><p>河川名:	木津川</p><br/><p>所在地:	京都府木津川市加茂町北船屋</p>",
+        "iconSize": [40, 40]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.86944444444444, 34.75888888888889]
+      }
+    }
+  ]
+}

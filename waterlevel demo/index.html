@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/maps/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/maps/modules/offline-exporting.js"></script>
+<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.51.0/mapbox-gl.css' rel='stylesheet' />
+<script src='js/mapbox-gl-compare.js'></script>
+<script src='js/highcharts-more.js'></script>
+<link rel='stylesheet' href='css/mapbox-gl-compare.css' type='text/css' />
+<script src='js/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='css/mapbox-gl-geocoder.css' type='text/css' />
+<script src="easing.js"></script>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Demo</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    img {
+      border: 0;
+    }
+
+    ul,
+    li {
+      list-style-type: none;
+    }
+
+    a {
+      color: rgba(0, 0, 0, 0.5);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: rgba(0, 0, 0, 0.2);
+      text-decoration: underline;
+    }
+
+    .treebox {
+      width: 200px;
+      position: absolute;
+      top: 5%;
+      ;
+      left: 2%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .menu {
+      overflow: hidden;
+      border-color: #ddd;
+      border-style: solid;
+      border-width: 0 1px 1px;
+    }
+
+
+
+    .menu li.level1>a {
+      display: block;
+      height: 45px;
+      line-height: 45px;
+      color: #fff;
+      padding-left: 50px;
+      border-bottom: 1px solid #000;
+      font-size: 16px;
+      position: relative;
+    }
+
+    .menu li.level1 a:hover {
+      text-decoration: none;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .menu li.level1 a.current {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+
+    .ico {
+      width: 20px;
+      height: 20px;
+      display: block;
+      position: absolute;
+      left: 20px;
+      top: 10px;
+      background-repeat: no-repeat;
+      background-image: url(images/ico1.png);
+    }
+
+    /*============小箭头*/
+
+    .level1 i {
+      width: 20px;
+      height: 10px;
+      background-image: url(images/arrow.png);
+      background-repeat: no-repeat;
+      display: block;
+      position: absolute;
+      right: 20px;
+      top: 20px;
+    }
+
+    .level1 i.down {
+      background-position: 0 -10px;
+    }
+
+    .ico1 {
+      background-position: 0 0;
+    }
+
+    .ico2 {
+      background-position: 0 -20px;
+    }
+
+    .ico3 {
+      background-position: 0 -40px;
+    }
+
+    .ico4 {
+      background-position: 0 -60px;
+    }
+
+    .ico5 {
+      background-position: 0 -80px;
+    }
+
+    /*第二层*/
+
+    .menu li ul {
+      overflow: hidden;
+    }
+
+    .menu li ul.level2 {
+      display: none;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .menu li ul.level2 li a {
+      display: block;
+      height: 45px;
+      line-height: 45px;
+      color: #fff;
+      text-indent: 60px;
+      /*border-bottom: 1px solid #ddd; */
+      font-size: 14px;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    body * {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .marker {
+      display: block;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='background' style="position:absolute; height: 100%; width: 100%; margin: 0px 5px 5px -8px; z-index= -1">
+
+    <div id='before' class='map'></div>
+    <div id='after' class='map'></div>
+
+    <div class="treebox">
+      <ul class="menu">
+        <li class="level1">
+          <a href="#none"><em class="ico ico2"></em>Visualization<i></i></a>
+          <ul class="level2">
+            <li><a id='WaterLevel' href="javascript:;"> Past Data</a></li>
+            <li><a id='Atmosphere' href="javascript:;">N/A</a></li>
+          </ul>
+        </li>
+        <li class="level1">
+          <a href="#none"><em class="ico ico3"></em>Forecasting<i></i></a>
+          <ul class="level2">
+            <li><a id='waterLevelForecasting' href="javascript:;">Water Level</a></li>
+            <li><a href="javascript:;">N/A</a></li>
+          </ul>
+        </li>
+        <li class="level1">
+          <a href="#none"><em class="ico ico4"></em>About<i></i></a>
+          <ul class="level2">
+            <li><a href="javascript:;">SI-CAT</a></li>
+            <li><a href="javascript:;">Kyoto Univ.</a></li>
+            <li><a href="javascript:;">Koyamada Lab</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div id="waterLevelGraph" style="position:absolute; height: 35%; width: 90%; bottom:5%; ;left:5%; background-color:rgba(0, 0, 0, 0.5); z-index= 10"></div>
+    <div id="waterLevelForecastingGraph" style="position:absolute; height: 35%; width: 90%; bottom:5%; ;left:5%; background-color:rgba(0, 0, 0, 0.5); z-index= 10"></div>
+  </div>
+
+</body>
+
+</html>
+
+<script>
+  $(function() {
+    $(".treebox .level1>a").click(function() {
+      $(this).addClass('current')
+        .find('i').addClass('down')
+        .parent().next().slideDown('slow', 'easeOutQuad')
+        .parent().siblings().children('a').removeClass('current')
+        .find('i').removeClass('down').parent().next().slideUp('slow', 'easeOutQuad');
+      return false;
+    });
+  })
+</script>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoibGVpcHV3ZW4iLCJhIjoiY2pvc243bXl3MHNhOTNrcGJzYWlpODBtayJ9.D1K7j_VEWhw5Xz3JxnQtTg';
+
+  var geojson = {
+    "type": "FeatureCollection",
+    "features": [{
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名: 宇治（うじ）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606010</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府宇治市宇治里尻</p>",
+          "iconSize": [60, 60]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.8036111111111, 34.894444444444446]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名:  有市（ありいち）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	1362160400220</p><br/><p>水系名:	淀川</p><br/><p>河川名:	木津川</p><br/><p>所在地:	京都府相楽郡笠置町大字上有市小字根台５８</p>",
+          "iconSize": [50, 50]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.96444444444444, 34.7675]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名:  井戸（いど）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	1362160341321</p><br/><p>水系名:	淀川</p><br/><p>河川名:	桂川</p><br/><p>所在地:	京都府京都市右京区京北大野町横枕</p>",
+          "iconSize": [40, 40]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.68277777777777, 35.19138888888889]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名:  向島（むかいじま）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606040</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府京都市伏見区向島橋詰町</p>",
+          "iconSize": [40, 40]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.7697222222222, 34.92666666666667]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名: 淀（よど）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606060</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府久世郡久御山町大橋辺</p>",
+          "iconSize": [40, 40]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.71777777777777, 34.8975]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名: 宇治川三川（うじがわさんせん）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606070</p><br/><p>水系名:	淀川</p><br/><p>河川名:	宇治川</p><br/><p>所在地:	京都府八幡市橋本奥ノ町</p>",
+          "iconSize": [40, 40]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.68555555555557, 34.889722222222225]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {
+          "description": "<p>観測所名: 加茂（かも）</p><br/><p>観測項目:	水位流量 </p><br/><p>観測所記号:	306041286606190</p><br/><p>水系名:	淀川</p><br/><p>河川名:	木津川</p><br/><p>所在地:	京都府木津川市加茂町北船屋</p>",
+          "iconSize": [40, 40]
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.86944444444444, 34.75888888888889]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.63623046875, 37.52715361723378]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.1416015625, 37.35269280367274]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.16357421875, 38.18638677411551]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.64697265625, 37.85750715625203]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.38330078125, 39.52099229357195]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [141.064453125, 39.45316112807394]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.82275390625, 40.48038142908172]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.9326171875, 39.01064750994083]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [141.85546875, 39.85915479295669]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [143.2177734375, 43.929549935614595]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [142.14111328125, 44.5278427984555]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [142.1630859375, 43.51668853502906]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [143.56933593749997, 42.94033923363181]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [142.36083984375, 42.84375132629021]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [143.6572265625, 43.61221676817573]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [144.755859375, 43.51668853502906]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.15283203125, 36.40359962073253]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.009765625, 35.97800618085566]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.8779296875, 35.585851593232356]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.25146484375, 36.61552763134925]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.4384765625, 35.37113502280101]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.2734375, 35.746512259918504]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.44921875, 36.38591277287651]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.7900390625, 36.54494944148322]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.03173828125, 36.049098959065645]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.03173828125, 36.31512514748051]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [140.44921875, 35.639441068973944]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [139.89990234375, 35.92464453144099]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [134.09912109375, 34.84987503195418]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [133.79150390625, 35.15584570226544]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [133.57177734375, 34.77771580360469]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [132.0556640625, 34.43409789359469]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [133.65966796875, 33.742612777346885]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [132.82470703125, 33.33970700424026]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [130.78125, 31.952162238024975]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [130.95703125, 32.89803818160521]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.263671875, 34.994003757575776]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [136.0986328125, 34.63320791137959]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [136.142578125, 34.161818161230386]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.791015625, 34.59704151614417]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [135.52734375, 33.97980872872457]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [136.0107421875, 34.125447565116126]
+        }
+      }, {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [134.736328125, 35.02999636902566]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.493896484375,
+            36.2354121683998
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            138.131103515625,
+            36.01356058518153
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.867431640625,
+            36.2354121683998
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.691650390625,
+            34.96699890670367
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.08740234375,
+            35.200744801724014
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.559814453125,
+            35.36217605914681
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            136.93359375,
+            35.54116627999815
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.26318359375,
+            34.912962495216966
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.955322265625,
+            35.11990857099681
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.373046875,
+            35.35321610123823
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.724609375,
+            35.93354064249312
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.35107421875,
+            35.782170703266075
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.032470703125,
+            36.78289206199065
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.96630859375,
+            35.79108281624994
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.724609375,
+            34.732584206123626
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.548828125,
+            34.8047829195724
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            137.83447265625,
+            35.45172093634465
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            138.515625,
+            35.60371874069731
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            139.1748046875,
+            36.55377524336089
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            140.03173828125,
+            36.31512514748051
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            133.23120117187497,
+            33.568861182555565
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            130.62744140624997,
+            32.59310597426537
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            130.92407226562497,
+            32.87036022808352
+          ]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            130.45166015625,
+            33.15594830078649
+          ]
+        }
+      }
+    ]
+  };
+  var beforeMap = new mapboxgl.Map({
+    container: 'before',
+    style: 'mapbox://styles/leipuwen/cjp9p0wrg4mko2smnp71stqwj',
+    center: [137.910305, 38.733131],
+    zoom: 6
+  });
+
+  var afterMap = new mapboxgl.Map({
+    container: 'after',
+    style: 'mapbox://styles/mapbox/satellite-v9',
+    center: [137.910305, 38.733131],
+    zoom: 6
+  });
+
+  var map = new mapboxgl.Compare(beforeMap, afterMap, {
+    // Set this to enable comparing two maps by mouse movement:
+    // mousemove: true
+  });
+
+  beforeMap.addControl(new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken
+  }));
+
+  // add markers to map
+  beforeMap.on('load', function() {
+    // Add a new source from our GeoJSON data and set the
+    // 'cluster' option to true. GL-JS will add the point_count property to your source data.
+    beforeMap.addSource("geojson", {
+      type: "geojson",
+      data: geojson,
+      cluster: true,
+      clusterMaxZoom: 14, // Max zoom to cluster points on
+      clusterRadius: 100 // Radius of each cluster when clustering points (defaults to 50)
+    });
+
+    beforeMap.addLayer({
+      id: "clusters",
+      type: "circle",
+      source: "geojson",
+      filter: ["has", "point_count"],
+      paint: {
+        // Use step expressions (https://www.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+        // with three steps to implement three types of circles:
+        //   * Blue, 20px circles when point count is less than 100
+        //   * Yellow, 30px circles when point count is between 100 and 750
+        //   * Pink, 40px circles when point count is greater than or equal to 750
+        "circle-color": [
+          "step",
+          ["get", "point_count"],
+          "#51bbd6",
+          5,
+          "#436EEE",
+          10,
+          "#27408B"
+        ],
+        "circle-radius": [
+          "step",
+          ["get", "point_count"],
+          25,
+          5,
+          35,
+          10,
+          45
+        ]
+      }
+    });
+
+    beforeMap.addLayer({
+      id: "cluster-count",
+      type: "symbol",
+      source: "geojson",
+      filter: ["has", "point_count"],
+      layout: {
+        "text-field": "{point_count_abbreviated}",
+        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+        "text-size": 16
+      }
+    });
+
+    // beforeMap.addLayer({
+    //     id: "unclustered-point",
+    //     type: "symbol",
+    //     source: "geojson",
+    //     filter: ["!", ["has", "point_count"]],
+    //     "layout": {
+    //      "icon-image": "dog-15", "icon-size": 1.25 }
+    // });
+
+    beforeMap.loadImage('https://upload.wikimedia.org/wikipedia/commons/a/a4/Marker_5.png', function(error, image) {
+      if (error) throw error;
+      beforeMap.addImage('marker', image);
+      beforeMap.addLayer({
+        "id": "unclustered-point",
+        "type": "symbol",
+        "source": "geojson",
+        'filter': ["!", ["has", "point_count"]],
+        "layout": {
+          "icon-image": "marker",
+          "icon-size": 1
+        }
+      });
+    });
+
+    // inspect a cluster on click
+    beforeMap.on('click', 'clusters', function(e) {
+      var features = beforeMap.queryRenderedFeatures(e.point, {
+        layers: ['clusters']
+      });
+      var clusterId = features[0].properties.cluster_id;
+      beforeMap.getSource('geojson').getClusterExpansionZoom(clusterId, function(err, zoom) {
+        if (err)
+          return;
+
+        beforeMap.easeTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom + 1.5
+        });
+      });
+    });
+
+
+    beforeMap.on('click', 'unclustered-point', function(e) {
+      beforeMap.flyTo({
+        center: e.features[0].geometry.coordinates,
+        zoom: 15,
+        speed: 0.8
+      });
+
+      var coordinates = e.features[0].geometry.coordinates.slice();
+      var description = e.features[0].properties.description;
+
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(beforeMap);
+    });
+
+    beforeMap.on('mouseenter', 'clusters', function() {
+      beforeMap.getCanvas().style.cursor = 'pointer';
+    });
+    beforeMap.on('mouseleave', 'clusters', function() {
+      beforeMap.getCanvas().style.cursor = '';
+    });
+
+    beforeMap.on('mouseenter', 'unclustered-point', function() {
+      beforeMap.getCanvas().style.cursor = 'pointer';
+    });
+    beforeMap.on('mouseleave', 'unclustered-point', function() {
+      beforeMap.getCanvas().style.cursor = '';
+    });
+  });
+</script>
+
+
+<script>
+  var signForWaterLevelGraph = 0;
+  $("#waterLevelGraph").hide();
+  $("#WaterLevel").click(function() {
+    if (signForWaterLevelGraph == 1) {
+      $("#waterLevelGraph").hide();
+      signForWaterLevelGraph = 0;
+    } else {
+      var root1 = document.getElementById("waterLevelGraph");
+      if (signForwaterLevelForecastingGraph == 1 || signForPricipitationGraph == 1) {
+        root1.style.setProperty('bottom', '40%');
+      } else {
+        var root = document.getElementById("waterLevelGraph");
+        root1.style.setProperty('bottom', '5%');
+      }
+      $("#waterLevelGraph").show();
+      signForWaterLevelGraph = 1;
+    }
+  });
+
+  var signForwaterLevelForecastingGraph = 0;
+  $("#waterLevelForecastingGraph").hide();
+  $("#waterLevelForecasting").click(function() {
+    if (signForwaterLevelForecastingGraph == 1) {
+      $("#waterLevelForecastingGraph").hide();
+      signForwaterLevelForecastingGraph = 0;
+    } else {
+      var root2 = document.getElementById("waterLevelForecastingGraph");
+      if (signForWaterLevelGraph == 1 || signForwaterLevelForecastingGraph == 1) {
+        root2.style.setProperty('bottom', '40%');
+      } else {
+        root2.style.setProperty('bottom', '5%');
+      }
+      $("#waterLevelForecastingGraph").show();
+      signForwaterLevelForecastingGraph = 1;
+    }
+  });
+
+
+  var signForPricipitationGraph = 0;
+  $("#pricipitationGraph").hide();
+  $("#pricipitationForecasting").click(function() {
+    if (signForPricipitationGraph == 1) {
+      $("#pricipitationGraph").hide();
+      signForPricipitationGraph = 0;
+    } else {
+      var root3 = document.getElementById("pricipitationGraph");
+      if (signForAtmosphereGraph == 1 || signForWaterLevelGraph == 1) {
+        root3.style.setProperty('bottom', '30%');
+      } else {
+        root3.style.setProperty('bottom', '5%');
+      }
+      $("#pricipitationGraph").show();
+      signForPricipitationGraph = 1;
+    }
+  });
+</script>
+
+
+<script>
+  var seriesOptions = [],
+    seriesCounter = 0,
+    names = ['Waterlevel', 'Precipitation'];
+
+  /**
+   * Create the chart when all data is loaded
+   * @returns {undefined}
+   */
+  function createChart() {
+
+    Highcharts.stockChart('waterLevelGraph', {
+
+      rangeSelector: {
+        selected: 4
+      },
+
+      credits: {
+        enabled: false
+      },
+
+      chart: {
+        zoomType: 'x',
+        backgroundColor: 'rgba(255, 255, 255, 0)',
+        plotBorderWidth: 1,
+        plotBackgroundColor: 'rgba(0, 0, 0, 0.1)',
+        ignoreHiddenSeries: false,
+        marginRight: 28,
+        marginleft: -6,
+        resetZoomButton: {
+          align: 'right',
+          verticalAlign: 'top'
+        }
+      },
+
+      title: {
+        text: 'Water Level (dm/d) & Precipitation (mm/d)',
+        style: {
+          color: '#FFFFFF',
+        }
+      },
+
+      xAxis: {
+        type: 'datetime',
+        lineColor: '#FFFFFF',
+        labels: {
+          style: {
+            color: '#FFFFFF'
+          }
+        }
+      },
+
+      yAxis: {
+        labels: {
+          style: {
+            color: '#FFFFFF'
+          }
+        },
+        plotLines: [{
+          value: 0,
+          width: 2,
+          color: 'silver'
+        }]
+      },
+
+      plotOptions: {
+        areaspline: {
+          marker: {
+            radius: 2
+          },
+          lineWidth: 1,
+          states: {
+            hover: {
+              lineWidth: 1
+            }
+          },
+          threshold: null
+        }
+      },
+      series: {
+        showInNavigator: true
+      },
+
+      tooltip: {
+        pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+        valueDecimals: 2,
+        split: true
+      },
+
+      navigator: {
+        xAxis: {
+          lineColor: '#FFFFFF',
+          labels: {
+            style: {
+              color: '#FFFFFF'
+            }
+          }
+        },
+      },
+
+      rangeSelector: {
+        buttonTheme: { // styles for the buttons
+          fill: 'none',
+          stroke: 'none',
+          'stroke-width': 0,
+          r: 8,
+          style: {
+            color: '#ffffff',
+            fontWeight: 'bold'
+          },
+          states: {
+            hover: {},
+            select: {
+              fill: '#666666',
+              style: {
+                color: 'white'
+              }
+            }
+            // disabled: { ... }
+          }
+        },
+        inputBoxBorderColor: 'white',
+        inputBoxWidth: 120,
+        inputBoxHeight: 18,
+        inputStyle: {
+          color: '#ffffff',
+          fontWeight: 'bold'
+        },
+        labelStyle: {
+          color: 'white',
+          fontWeight: 'bold'
+        },
+        selected: 1
+      },
+
+      series: seriesOptions
+    });
+  }
+
+  $.each(names, function(i, name) {
+
+    $.getJSON('data/' + name + '.json', function(data) {
+      seriesOptions[i] = {
+        type: 'areaspline',
+        fillColor: {
+          linearGradient: {
+            x1: 1,
+            y1: 0.4,
+            x2: 1,
+            y2: 1
+          },
+          stops: [
+            [0, Highcharts.getOptions().colors[8 * i]],
+            [1, Highcharts.Color(Highcharts.getOptions().colors[8 * i]).setOpacity(0).get('rgba')]
+          ]
+        },
+        name: name,
+        data: data
+      };
+
+      // As we're loading the data asynchronously, we don't know what order it will arrive. So
+      // we keep a counter and create the chart when all the data is loaded.
+      seriesCounter += 1;
+
+      if (seriesCounter === names.length) {
+        createChart();
+      }
+    });
+  });
+</script>
+
+<script>
+  var ranges = [[1420038000000, 43.82433127273876, 53.82433127273876], [1420124400000, 42.96940706027902, 52.96940706027902], [1420210800000, 43.44362205036171, 53.44362205036171], [1420297200000, 40.32329297198041, 50.32329297198041], [1420383600000, 39.63327739968821, 49.63327739968821], [1420470000000, 43.868699320438594, 53.868699320438594], [1420556400000, 43.76321881766865, 53.76321881766865], [1420642800000, 39.59878175954796, 49.59878175954796], [1420729200000, 44.687055796625124, 54.687055796625124], [1420815600000, 38.99960359680294, 48.99960359680294], [1420902000000, 45.33796901818218, 55.33796901818218], [1420988400000, 40.069340640634444, 50.069340640634444], [1421074800000, 42.798509372195525, 52.798509372195525], [1421161200000, 39.87958955198991, 49.87958955198991], [1421247600000, 42.255005107307184, 52.255005107307184], [1421334000000, 52.65236253217928, 62.65236253217928], [1421420400000, 52.23788191362262, 62.23788191362262], [1421506800000, 47.104184798195334, 57.104184798195334], [1421593200000, 50.22059708084247, 60.22059708084247], [1421679600000, 48.52836789266162, 58.52836789266162], [1421766000000, 44.451167555878094, 54.451167555878094], [1421852400000, 47.5146138455677, 57.5146138455677], [1421938800000, 45.57245301257182, 55.57245301257182], [1422025200000, 49.63870592944285, 59.63870592944285], [1422111600000, 44.93625906575768, 54.93625906575768], [1422198000000, 50.740053633928184, 60.740053633928184], [1422284400000, 51.37468735582492, 61.37468735582492], [1422370800000, 49.35026751838926, 59.35026751838926], [1422457200000, 51.92828864354668, 61.92828864354668], [1422543600000, 51.73232102682292, 61.73232102682292], [1422630000000, 50.840106917825175, 60.840106917825175], [1422716400000, 44.885107669296765, 54.885107669296765], [1422802800000, 45.07353346001821, 55.07353346001821], [1422889200000, 45.15424371205632, 55.15424371205632], [1422975600000, 44.14737684548366, 54.14737684548366], [1423062000000, 42.87524862224596, 52.87524862224596], [1423148400000, 45.9116236670877, 55.9116236670877], [1423234800000, 44.4826663615711, 54.4826663615711], [1423321200000, 43.878926870309314, 53.878926870309314], [1423407600000, 42.04869760708882, 52.04869760708882], [1423494000000, 41.92610647781261, 51.92610647781261], [1423580400000, 47.450699585749504, 57.450699585749504], [1423666800000, 38.529273908416435, 48.529273908416435], [1423753200000, 42.68793098760827, 52.68793098760827], [1423839600000, 41.45489099981591, 51.45489099981591], [1423926000000, 38.3860002755813, 48.3860002755813], [1424012400000, 43.89137752438954, 53.89137752438954], [1424098800000, 38.304470300437586, 48.304470300437586], [1424185200000, 37.009634967940684, 47.009634967940684], [1424271600000, 44.80522202330122, 54.80522202330122], [1424358000000, 42.16793608927538, 52.16793608927538], [1424444400000, 45.65347088201398, 55.65347088201398], [1424530800000, 39.999724142730685, 49.999724142730685], [1424617200000, 43.18424798207722, 53.18424798207722], [1424703600000, 44.724346855639396, 54.724346855639396], [1424790000000, 42.90659275151962, 52.90659275151962], [1424876400000, 44.482501219084725, 54.482501219084725], [1424962800000, 44.923921781849856, 54.923921781849856], [1425049200000, 46.76763993135928, 56.76763993135928], [1425135600000, 47.8297700343333, 57.8297700343333], [1425222000000, 54.554779973915174, 64.55477997391517], [1425308400000, 50.00272633170555, 60.00272633170555], [1425394800000, 48.45452766792541, 58.45452766792541], [1425481200000, 47.742013385470905, 57.742013385470905], [1425567600000, 46.848375725153346, 56.848375725153346], [1425654000000, 48.51367923790667, 58.51367923790667], [1425740400000, 44.76337099293195, 54.76337099293195], [1425826800000, 48.30206827521326, 58.30206827521326], [1425913200000, 52.79767273608364, 62.79767273608364], [1425999600000, 50.28368334603481, 60.28368334603481], [1426086000000, 44.46065901145324, 54.46065901145324], [1426172400000, 49.00791503749295, 59.00791503749295], [1426258800000, 48.602638740859064, 58.602638740859064], [1426345200000, 40.337931619837825, 50.337931619837825], [1426431600000, 40.950918785566515, 50.950918785566515], [1426518000000, 43.58166206331537, 53.58166206331537], [1426604400000, 39.959021768512166, 49.959021768512166], [1426690800000, 53.259131644786045, 63.259131644786045], [1426777200000, 57.4991723565266, 67.4991723565266], [1426863600000, 49.114269163784265, 59.114269163784265], [1426950000000, 46.905311573138476, 56.905311573138476], [1427036400000, 42.25948602878202, 52.25948602878202], [1427122800000, 42.87928946946746, 52.87928946946746], [1427209200000, 46.77480388788982, 56.77480388788982], [1427295600000, 46.905629381139946, 56.905629381139946], [1427382000000, 45.51860640264772, 55.51860640264772], [1427468400000, 39.282052030492046, 49.282052030492046], [1427554800000, 36.584111697672306, 46.584111697672306], [1427641200000, 39.076758206602804, 49.076758206602804], [1427727600000, 39.77557813000532, 49.77557813000532], [1427814000000, 36.592492167555555, 46.592492167555555], [1427900400000, 33.777809167181516, 43.777809167181516], [1427986800000, 42.652997889381254, 52.652997889381254], [1428073200000, 42.62183672387579, 52.62183672387579], [1428159600000, 43.09751319170736, 53.09751319170736], [1428246000000, 43.439509642995105, 53.439509642995105], [1428332400000, 50.491402557111144, 60.491402557111144], [1428418800000, 41.902201767034704, 51.902201767034704], [1428505200000, 44.08629241244668, 54.08629241244668], [1428591600000, 46.273202928223284, 56.273202928223284], [1428678000000, 45.36590380120449, 55.36590380120449], [1428764400000, 47.68106099174085, 57.68106099174085], [1428850800000, 50.554395601067895, 60.554395601067895], [1428937200000, 53.15865482252043, 63.15865482252043], [1429023600000, 50.45054637330652, 60.45054637330652], [1429110000000, 46.5584397090749, 56.5584397090749], [1429196400000, 41.40423788286329, 51.40423788286329], [1429282800000, 37.39788105601208, 47.39788105601208], [1429369200000, 44.66814161464026, 54.66814161464026], [1429455600000, 48.83139110653222, 58.83139110653222], [1429542000000, 53.19199811410998, 63.19199811410998], [1429628400000, 49.7050615458258, 59.7050615458258], [1429714800000, 41.43217239578492, 51.43217239578492], [1429801200000, 40.33383259008324, 50.33383259008324], [1429887600000, 40.240349468458504, 50.240349468458504], [1429974000000, 35.8959765374049, 45.8959765374049], [1430060400000, 37.2736654249188, 47.2736654249188], [1430146800000, 37.83942548653328, 47.83942548653328], [1430233200000, 41.25774469378269, 51.25774469378269], [1430319600000, 36.03416079088376, 46.03416079088376], [1430406000000, 32.931883908115914, 42.931883908115914], [1430492400000, 36.89728182449385, 46.89728182449385], [1430578800000, 32.40267964434357, 42.40267964434357], [1430665200000, 39.46013898976656, 49.46013898976656], [1430751600000, 32.102645020111936, 42.102645020111936], [1430838000000, 39.28572484835762, 49.28572484835762], [1430924400000, 36.782138767539465, 46.782138767539465], [1431010800000, 38.879976402699086, 48.879976402699086], [1431097200000, 38.649935150866256, 48.649935150866256], [1431183600000, 33.490419107888144, 43.490419107888144], [1431270000000, 37.99463204410298, 47.99463204410298], [1431356400000, 33.48566837627704, 43.48566837627704], [1431442800000, 42.456729069251345, 52.456729069251345], [1431529200000, 42.28173476384548, 52.28173476384548], [1431615600000, 40.690665158199266, 50.690665158199266], [1431702000000, 45.20350012726294, 55.20350012726294], [1431788400000, 44.118410349799866, 54.118410349799866], [1431874800000, 36.452482104291654, 46.452482104291654], [1431961200000, 43.38698025065345, 53.38698025065345], [1432047600000, 37.80609662023105, 47.80609662023105], [1432134000000, 38.89928515824198, 48.89928515824198], [1432220400000, 43.10979440170076, 53.10979440170076], [1432306800000, 41.473119064961246, 51.473119064961246], [1432393200000, 38.89068295018985, 48.89068295018985], [1432479600000, 42.422125386542966, 52.422125386542966], [1432566000000, 39.21665490025543, 49.21665490025543], [1432652400000, 38.2571964607054, 48.2571964607054], [1432738800000, 35.3945887312586, 45.3945887312586], [1432825200000, 40.36727441983797, 50.36727441983797], [1432911600000, 33.95409628227945, 43.95409628227945], [1432998000000, 42.28371631153313, 52.28371631153313], [1433084400000, 38.86661092798593, 48.86661092798593], [1433170800000, 38.92589138036604, 48.92589138036604], [1433257200000, 48.585445686126235, 58.585445686126235], [1433343600000, 39.644779598700204, 49.644779598700204], [1433430000000, 40.11793825820828, 50.11793825820828], [1433516400000, 48.63452208955789, 58.63452208955789], [1433602800000, 41.83136962617823, 51.83136962617823], [1433689200000, 42.95747206445157, 52.95747206445157], [1433775600000, 55.95854146219041, 65.95854146219041], [1433862000000, 48.48725011995795, 58.48725011995795], [1433948400000, 53.13504652043204, 63.13504652043204], [1434034800000, 51.1344009613844, 61.1344009613844], [1434121200000, 51.39536050727608, 61.39536050727608], [1434207600000, 47.43780074195431, 57.43780074195431], [1434294000000, 47.199078123921986, 57.199078123921986], [1434380400000, 53.14272825443944, 63.14272825443944], [1434466800000, 35.79325048663448, 45.79325048663448], [1434553200000, 34.00705704498983, 44.00705704498983], [1434639600000, 39.69658233095712, 49.69658233095712], [1434726000000, 35.74566897311025, 45.74566897311025], [1434812400000, 38.75256638812295, 48.75256638812295], [1434898800000, 42.65834707977014, 52.65834707977014], [1434985200000, 37.880591943462115, 47.880591943462115], [1435071600000, 42.93963405275572, 52.93963405275572], [1435158000000, 42.476050018609236, 52.476050018609236], [1435244400000, 48.67102815973286, 58.67102815973286], [1435330800000, 48.05126777866311, 58.05126777866311], [1435417200000, 47.77042794623686, 57.77042794623686], [1435503600000, 48.48882126902825, 58.48882126902825], [1435590000000, 44.84438255324678, 54.84438255324678], [1435676400000, 53.55115612108134, 63.55115612108134], [1435762800000, 57.6765472163704, 67.67654721637041], [1435849200000, 55.58094897789001, 65.58094897789002], [1435935600000, 57.45671427101348, 67.45671427101348], [1436022000000, 52.44992776033694, 62.44992776033694], [1436108400000, 52.57128533072131, 62.57128533072131], [1436194800000, 50.29870000422852, 60.29870000422852], [1436281200000, 50.344817861661696, 60.344817861661696], [1436367600000, 56.59463589352367, 66.59463589352367], [1436454000000, 53.33687547607521, 63.33687547607521], [1436540400000, 51.252310933247585, 61.252310933247585], [1436626800000, 43.39945905135408, 53.39945905135408], [1436713200000, 49.02895166086049, 59.02895166086049], [1436799600000, 41.22131910904751, 51.22131910904751], [1436886000000, 44.00796262870223, 54.00796262870223], [1436972400000, 51.4395987513275, 61.4395987513275], [1437058800000, 74.88849775736828, 84.88849775736828], [1437145200000, 95.34872240148117, 105.34872240148117], [1437231600000, 73.59943075283205, 83.59943075283205], [1437318000000, 68.9738094644932, 78.9738094644932], [1437404400000, 69.50820657507357, 79.50820657507357], [1437490800000, 69.49431554871401, 79.49431554871401], [1437577200000, 66.39500679043354, 76.39500679043354], [1437663600000, 67.1689736564723, 77.1689736564723], [1437750000000, 61.750539077109636, 71.75053907710964], [1437836400000, 64.77008331658749, 74.77008331658749], [1437922800000, 51.59678755405219, 61.59678755405219], [1438009200000, 41.392314842198516, 51.392314842198516], [1438095600000, 47.6627955449811, 57.6627955449811], [1438182000000, 45.41855856193385, 55.41855856193385], [1438268400000, 37.47306744636385, 47.47306744636385], [1438354800000, 33.19555987181831, 43.19555987181831], [1438441200000, 35.59645020228909, 45.59645020228909], [1438527600000, 37.699464396028326, 47.699464396028326], [1438614000000, 35.368660623112255, 45.368660623112255], [1438700400000, 38.35374601842235, 48.35374601842235], [1438786800000, 35.845500379710884, 45.845500379710884], [1438873200000, 31.992182044941863, 41.99218204494186], [1438959600000, 34.67139945543026, 44.67139945543026], [1439046000000, 34.549312451898835, 44.549312451898835], [1439132400000, 39.34055580405677, 49.34055580405677], [1439218800000, 32.883189122642584, 42.883189122642584], [1439305200000, 37.13934408408897, 47.13934408408897], [1439391600000, 40.74966878034578, 50.74966878034578], [1439478000000, 36.52252228658328, 46.52252228658328], [1439564400000, 32.302370827675915, 42.302370827675915], [1439650800000, 32.847006401507905, 42.847006401507905], [1439737200000, 44.92562336592813, 54.92562336592813], [1439823600000, 44.29923641044345, 54.29923641044345], [1439910000000, 34.71655801801603, 44.71655801801603], [1439996400000, 55.40038199337756, 65.40038199337755], [1440082800000, 50.99779078615479, 60.99779078615479], [1440169200000, 46.16629031268947, 56.16629031268947], [1440255600000, 47.4362940591826, 57.4362940591826], [1440342000000, 44.36412993583846, 54.36412993583846], [1440428400000, 45.920257274886694, 55.920257274886694], [1440514800000, 52.960430013330324, 62.960430013330324], [1440601200000, 45.23974884170999, 55.23974884170999], [1440687600000, 42.049655867671966, 52.049655867671966], [1440774000000, 40.96710268708373, 50.96710268708373], [1440860400000, 44.329242031678945, 54.329242031678945], [1440946800000, 49.91017513007263, 59.91017513007263], [1441033200000, 53.22198636313393, 63.22198636313393], [1441119600000, 62.711553663029534, 72.71155366302953], [1441206000000, 54.55986706589387, 64.55986706589387], [1441292400000, 51.576820367639584, 61.576820367639584], [1441378800000, 50.869567658450414, 60.869567658450414], [1441465200000, 47.73380878740038, 57.73380878740038], [1441551600000, 46.81989466747484, 56.81989466747484], [1441638000000, 51.431753046199105, 61.431753046199105], [1441724400000, 70.97110488800982, 80.97110488800982], [1441810800000, 73.14315613461648, 83.14315613461648], [1441897200000, 65.14087246939492, 75.14087246939492], [1441983600000, 61.0662083900653, 71.0662083900653], [1442070000000, 60.79843763892522, 70.79843763892522], [1442156400000, 56.84546279507626, 66.84546279507626], [1442242800000, 46.62650696570937, 56.62650696570937], [1442329200000, 41.470681726111685, 51.470681726111685], [1442415600000, 41.243937864812715, 51.243937864812715], [1442502000000, 45.502074814033506, 55.502074814033506], [1442588400000, 40.267711800951226, 50.267711800951226], [1442674800000, 39.02221730751074, 49.02221730751074], [1442761200000, 43.91733702476091, 53.91733702476091], [1442847600000, 35.80687122835199, 45.80687122835199], [1442934000000, 34.06162265913512, 44.06162265913512], [1443020400000, 32.50535576460085, 42.50535576460085], [1443106800000, 45.09643931161709, 55.09643931161709], [1443193200000, 50.426885174883374, 60.426885174883374], [1443279600000, 43.83520856015882, 53.83520856015882], [1443366000000, 42.40847936049254, 52.40847936049254], [1443452400000, 34.616355025385914, 44.616355025385914], [1443538800000, 38.76118273679339, 48.76118273679339], [1443625200000, 36.833231858732574, 46.833231858732574], [1443711600000, 40.9034797204891, 50.9034797204891], [1443798000000, 42.463045018244344, 52.463045018244344], [1443884400000, 34.16053495269919, 44.16053495269919], [1443970800000, 41.460300228860426, 51.460300228860426], [1444057200000, 32.65988079023651, 42.65988079023651], [1444143600000, 36.29562047710292, 46.29562047710292], [1444230000000, 37.88881453138376, 47.88881453138376], [1444316400000, 36.51877265782028, 46.51877265782028], [1444402800000, 36.33623188514984, 46.33623188514984], [1444489200000, 33.01197897796609, 43.01197897796609], [1444575600000, 33.76759050812744, 43.76759050812744], [1444662000000, 39.26260429043788, 49.26260429043788], [1444748400000, 36.27565851419985, 46.27565851419985], [1444834800000, 36.55730167246782, 46.55730167246782], [1444921200000, 35.76800596326681, 45.76800596326681], [1445007600000, 32.621596244555896, 42.621596244555896], [1445094000000, 34.69410985325544, 44.69410985325544], [1445180400000, 31.53818479986782, 41.53818479986782], [1445266800000, 35.81410853796673, 45.81410853796673], [1445353200000, 36.02841655054788, 46.02841655054788], [1445439600000, 34.64999392158242, 44.64999392158242], [1445526000000, 36.49003909334935, 46.49003909334935], [1445612400000, 30.976257864727472, 40.97625786472747], [1445698800000, 32.64106956651855, 42.64106956651855], [1445785200000, 32.326815588252714, 42.326815588252714], [1445871600000, 38.608083785857026, 48.608083785857026], [1445958000000, 36.831444791483584, 46.831444791483584], [1446044400000, 30.756257757447628, 40.75625775744763], [1446130800000, 35.032758663959314, 45.032758663959314], [1446217200000, 30.990968959263995, 40.990968959263995], [1446303600000, 36.503710322545125, 46.503710322545125], [1446390000000, 38.49569752719525, 48.49569752719525], [1446476400000, 35.86965014899378, 45.86965014899378], [1446562800000, 34.92158776263387, 44.92158776263387], [1446649200000, 33.733932784721475, 43.733932784721475], [1446735600000, 37.86214880516919, 47.86214880516919], [1446822000000, 31.976764322616702, 41.9767643226167], [1446908400000, 35.715208370235125, 45.715208370235125], [1446994800000, 39.8478974501234, 49.8478974501234], [1447081200000, 32.30511269551753, 42.30511269551753], [1447167600000, 33.983022788876205, 43.983022788876205], [1447254000000, 32.37295328414216, 42.37295328414216], [1447340400000, 36.45322270689272, 46.45322270689272], [1447426800000, 35.23482848951481, 45.23482848951481], [1447513200000, 38.594071315206264, 48.594071315206264], [1447599600000, 33.909023391544395, 43.909023391544395], [1447686000000, 37.8975639903261, 47.8975639903261], [1447772400000, 39.59283436046041, 49.59283436046041], [1447858800000, 43.97728418194366, 53.97728418194366], [1447945200000, 37.70598358049236, 47.70598358049236], [1448031600000, 35.56539009509475, 45.56539009509475], [1448118000000, 32.8835054421516, 42.8835054421516], [1448204400000, 38.12225381237141, 48.12225381237141], [1448290800000, 33.57393619608483, 43.57393619608483], [1448377200000, 34.78664446499174, 44.78664446499174], [1448463600000, 39.02862788439261, 49.02862788439261], [1448550000000, 39.4594796280489, 49.4594796280489], [1448636400000, 37.089643237739615, 47.089643237739615], [1448722800000, 30.38966195074076, 40.38966195074076], [1448809200000, 36.54369601778861, 46.54369601778861], [1448895600000, 31.493189565424032, 41.49318956542403], [1448982000000, 36.504420090552784, 46.504420090552784], [1449068400000, 31.449413421750137, 41.44941342175014], [1449154800000, 35.277637055380474, 45.277637055380474], [1449241200000, 36.538005641885164, 46.538005641885164], [1449327600000, 31.69133427373051, 41.69133427373051], [1449414000000, 35.6723704726671, 45.6723704726671], [1449500400000, 32.905916543187544, 42.905916543187544], [1449586800000, 37.435998258338216, 47.435998258338216], [1449673200000, 32.57210435309687, 42.57210435309687], [1449759600000, 44.005174474851266, 54.005174474851266], [1449846000000, 39.60449377809967, 49.60449377809967], [1449932400000, 36.720910313105186, 46.720910313105186], [1450018800000, 37.14327087940252, 47.14327087940252], [1450105200000, 34.461288345030695, 44.461288345030695], [1450191600000, 31.541222529316357, 41.54122252931636], [1450278000000, 31.75423779198303, 41.75423779198303], [1450364400000, 33.93823142702478, 43.93823142702478], [1450450800000, 38.982952656733715, 48.982952656733715], [1450537200000, 36.452782569745615, 46.452782569745615], [1450623600000, 35.31186083915457, 45.31186083915457], [1450710000000, 37.520301713442784, 47.520301713442784], [1450796400000, 36.7600302127836, 46.7600302127836], [1450882800000, 40.262331612630675, 50.262331612630675], [1450969200000, 36.89896179432726, 46.89896179432726], [1451055600000, 39.37434550360318, 49.37434550360318], [1451142000000, 30.92085202473592, 40.92085202473592], [1451228400000, 31.78451976288322, 41.78451976288322], [1451314800000, 32.549328952372385, 42.549328952372385], [1451401200000, 36.57005078902681, 46.57005078902681], [1451487600000, 34.86019203645858, 44.86019203645858]],
+    averages = [[1420038000000, 48.82433127273876], [1420124400000, 47.96940706027902], [1420210800000, 48.44362205036171], [1420297200000, 45.32329297198041], [1420383600000, 44.63327739968821], [1420470000000, 48.868699320438594], [1420556400000, 48.76321881766865], [1420642800000, 44.59878175954796], [1420729200000, 49.687055796625124], [1420815600000, 43.99960359680294], [1420902000000, 50.33796901818218], [1420988400000, 45.069340640634444], [1421074800000, 47.798509372195525], [1421161200000, 44.87958955198991], [1421247600000, 47.255005107307184], [1421334000000, 57.65236253217928], [1421420400000, 57.23788191362262], [1421506800000, 52.104184798195334], [1421593200000, 55.22059708084247], [1421679600000, 53.52836789266162], [1421766000000, 49.451167555878094], [1421852400000, 52.5146138455677], [1421938800000, 50.57245301257182], [1422025200000, 54.63870592944285], [1422111600000, 49.93625906575768], [1422198000000, 55.740053633928184], [1422284400000, 56.37468735582492], [1422370800000, 54.35026751838926], [1422457200000, 56.92828864354668], [1422543600000, 56.73232102682292], [1422630000000, 55.840106917825175], [1422716400000, 49.885107669296765], [1422802800000, 50.07353346001821], [1422889200000, 50.15424371205632], [1422975600000, 49.14737684548366], [1423062000000, 47.87524862224596], [1423148400000, 50.9116236670877], [1423234800000, 49.4826663615711], [1423321200000, 48.878926870309314], [1423407600000, 47.04869760708882], [1423494000000, 46.92610647781261], [1423580400000, 52.450699585749504], [1423666800000, 43.529273908416435], [1423753200000, 47.68793098760827], [1423839600000, 46.45489099981591], [1423926000000, 43.3860002755813], [1424012400000, 48.89137752438954], [1424098800000, 43.304470300437586], [1424185200000, 42.009634967940684], [1424271600000, 49.80522202330122], [1424358000000, 47.16793608927538], [1424444400000, 50.65347088201398], [1424530800000, 44.999724142730685], [1424617200000, 48.18424798207722], [1424703600000, 49.724346855639396], [1424790000000, 47.90659275151962], [1424876400000, 49.482501219084725], [1424962800000, 49.923921781849856], [1425049200000, 51.76763993135928], [1425135600000, 52.8297700343333], [1425222000000, 59.554779973915174], [1425308400000, 55.00272633170555], [1425394800000, 53.45452766792541], [1425481200000, 52.742013385470905], [1425567600000, 51.848375725153346], [1425654000000, 53.51367923790667], [1425740400000, 49.76337099293195], [1425826800000, 53.30206827521326], [1425913200000, 57.79767273608364], [1425999600000, 55.28368334603481], [1426086000000, 49.46065901145324], [1426172400000, 54.00791503749295], [1426258800000, 53.602638740859064], [1426345200000, 45.337931619837825], [1426431600000, 45.950918785566515], [1426518000000, 48.58166206331537], [1426604400000, 44.959021768512166], [1426690800000, 58.259131644786045], [1426777200000, 62.4991723565266], [1426863600000, 54.114269163784265], [1426950000000, 51.905311573138476], [1427036400000, 47.25948602878202], [1427122800000, 47.87928946946746], [1427209200000, 51.77480388788982], [1427295600000, 51.905629381139946], [1427382000000, 50.51860640264772], [1427468400000, 44.282052030492046], [1427554800000, 41.584111697672306], [1427641200000, 44.076758206602804], [1427727600000, 44.77557813000532], [1427814000000, 41.592492167555555], [1427900400000, 38.777809167181516], [1427986800000, 47.652997889381254], [1428073200000, 47.62183672387579], [1428159600000, 48.09751319170736], [1428246000000, 48.439509642995105], [1428332400000, 55.491402557111144], [1428418800000, 46.902201767034704], [1428505200000, 49.08629241244668], [1428591600000, 51.273202928223284], [1428678000000, 50.36590380120449], [1428764400000, 52.68106099174085], [1428850800000, 55.554395601067895], [1428937200000, 58.15865482252043], [1429023600000, 55.45054637330652], [1429110000000, 51.5584397090749], [1429196400000, 46.40423788286329], [1429282800000, 42.39788105601208], [1429369200000, 49.66814161464026], [1429455600000, 53.83139110653222], [1429542000000, 58.19199811410998], [1429628400000, 54.7050615458258], [1429714800000, 46.43217239578492], [1429801200000, 45.33383259008324], [1429887600000, 45.240349468458504], [1429974000000, 40.8959765374049], [1430060400000, 42.2736654249188], [1430146800000, 42.83942548653328], [1430233200000, 46.25774469378269], [1430319600000, 41.03416079088376], [1430406000000, 37.931883908115914], [1430492400000, 41.89728182449385], [1430578800000, 37.40267964434357], [1430665200000, 44.46013898976656], [1430751600000, 37.102645020111936], [1430838000000, 44.28572484835762], [1430924400000, 41.782138767539465], [1431010800000, 43.879976402699086], [1431097200000, 43.649935150866256], [1431183600000, 38.490419107888144], [1431270000000, 42.99463204410298], [1431356400000, 38.48566837627704], [1431442800000, 47.456729069251345], [1431529200000, 47.28173476384548], [1431615600000, 45.690665158199266], [1431702000000, 50.20350012726294], [1431788400000, 49.118410349799866], [1431874800000, 41.452482104291654], [1431961200000, 48.38698025065345], [1432047600000, 42.80609662023105], [1432134000000, 43.89928515824198], [1432220400000, 48.10979440170076], [1432306800000, 46.473119064961246], [1432393200000, 43.89068295018985], [1432479600000, 47.422125386542966], [1432566000000, 44.21665490025543], [1432652400000, 43.2571964607054], [1432738800000, 40.3945887312586], [1432825200000, 45.36727441983797], [1432911600000, 38.95409628227945], [1432998000000, 47.28371631153313], [1433084400000, 43.86661092798593], [1433170800000, 43.92589138036604], [1433257200000, 53.585445686126235], [1433343600000, 44.644779598700204], [1433430000000, 45.11793825820828], [1433516400000, 53.63452208955789], [1433602800000, 46.83136962617823], [1433689200000, 47.95747206445157], [1433775600000, 60.95854146219041], [1433862000000, 53.48725011995795], [1433948400000, 58.13504652043204], [1434034800000, 56.1344009613844], [1434121200000, 56.39536050727608], [1434207600000, 52.43780074195431], [1434294000000, 52.199078123921986], [1434380400000, 58.14272825443944], [1434466800000, 40.79325048663448], [1434553200000, 39.00705704498983], [1434639600000, 44.69658233095712], [1434726000000, 40.74566897311025], [1434812400000, 43.75256638812295], [1434898800000, 47.65834707977014], [1434985200000, 42.880591943462115], [1435071600000, 47.93963405275572], [1435158000000, 47.476050018609236], [1435244400000, 53.67102815973286], [1435330800000, 53.05126777866311], [1435417200000, 52.77042794623686], [1435503600000, 53.48882126902825], [1435590000000, 49.84438255324678], [1435676400000, 58.55115612108134], [1435762800000, 62.6765472163704], [1435849200000, 60.58094897789001], [1435935600000, 62.45671427101348], [1436022000000, 57.44992776033694], [1436108400000, 57.57128533072131], [1436194800000, 55.29870000422852], [1436281200000, 55.344817861661696], [1436367600000, 61.59463589352367], [1436454000000, 58.33687547607521], [1436540400000, 56.252310933247585], [1436626800000, 48.39945905135408], [1436713200000, 54.02895166086049], [1436799600000, 46.22131910904751], [1436886000000, 49.00796262870223], [1436972400000, 56.4395987513275], [1437058800000, 79.88849775736828], [1437145200000, 100.34872240148117], [1437231600000, 78.59943075283205], [1437318000000, 73.9738094644932], [1437404400000, 74.50820657507357], [1437490800000, 74.49431554871401], [1437577200000, 71.39500679043354], [1437663600000, 72.1689736564723], [1437750000000, 66.75053907710964], [1437836400000, 69.77008331658749], [1437922800000, 56.59678755405219], [1438009200000, 46.392314842198516], [1438095600000, 52.6627955449811], [1438182000000, 50.41855856193385], [1438268400000, 42.47306744636385], [1438354800000, 38.19555987181831], [1438441200000, 40.59645020228909], [1438527600000, 42.699464396028326], [1438614000000, 40.368660623112255], [1438700400000, 43.35374601842235], [1438786800000, 40.845500379710884], [1438873200000, 36.99218204494186], [1438959600000, 39.67139945543026], [1439046000000, 39.549312451898835], [1439132400000, 44.34055580405677], [1439218800000, 37.883189122642584], [1439305200000, 42.13934408408897], [1439391600000, 45.74966878034578], [1439478000000, 41.52252228658328], [1439564400000, 37.302370827675915], [1439650800000, 37.847006401507905], [1439737200000, 49.92562336592813], [1439823600000, 49.29923641044345], [1439910000000, 39.71655801801603], [1439996400000, 60.40038199337756], [1440082800000, 55.99779078615479], [1440169200000, 51.16629031268947], [1440255600000, 52.4362940591826], [1440342000000, 49.36412993583846], [1440428400000, 50.920257274886694], [1440514800000, 57.960430013330324], [1440601200000, 50.23974884170999], [1440687600000, 47.049655867671966], [1440774000000, 45.96710268708373], [1440860400000, 49.329242031678945], [1440946800000, 54.91017513007263], [1441033200000, 58.22198636313393], [1441119600000, 67.71155366302953], [1441206000000, 59.55986706589387], [1441292400000, 56.576820367639584], [1441378800000, 55.869567658450414], [1441465200000, 52.73380878740038], [1441551600000, 51.81989466747484], [1441638000000, 56.431753046199105], [1441724400000, 75.97110488800982], [1441810800000, 78.14315613461648], [1441897200000, 70.14087246939492], [1441983600000, 66.0662083900653], [1442070000000, 65.79843763892522], [1442156400000, 61.84546279507626], [1442242800000, 51.62650696570937], [1442329200000, 46.470681726111685], [1442415600000, 46.243937864812715], [1442502000000, 50.502074814033506], [1442588400000, 45.267711800951226], [1442674800000, 44.02221730751074], [1442761200000, 48.91733702476091], [1442847600000, 40.80687122835199], [1442934000000, 39.06162265913512], [1443020400000, 37.50535576460085], [1443106800000, 50.09643931161709], [1443193200000, 55.426885174883374], [1443279600000, 48.83520856015882], [1443366000000, 47.40847936049254], [1443452400000, 39.616355025385914], [1443538800000, 43.76118273679339], [1443625200000, 41.833231858732574], [1443711600000, 45.9034797204891], [1443798000000, 47.463045018244344], [1443884400000, 39.16053495269919], [1443970800000, 46.460300228860426], [1444057200000, 37.65988079023651], [1444143600000, 41.29562047710292], [1444230000000, 42.88881453138376], [1444316400000, 41.51877265782028], [1444402800000, 41.33623188514984], [1444489200000, 38.01197897796609], [1444575600000, 38.76759050812744], [1444662000000, 44.26260429043788], [1444748400000, 41.27565851419985], [1444834800000, 41.55730167246782], [1444921200000, 40.76800596326681], [1445007600000, 37.621596244555896], [1445094000000, 39.69410985325544], [1445180400000, 36.53818479986782], [1445266800000, 40.81410853796673], [1445353200000, 41.02841655054788], [1445439600000, 39.64999392158242], [1445526000000, 41.49003909334935], [1445612400000, 35.97625786472747], [1445698800000, 37.64106956651855], [1445785200000, 37.326815588252714], [1445871600000, 43.608083785857026], [1445958000000, 41.831444791483584], [1446044400000, 35.75625775744763], [1446130800000, 40.032758663959314], [1446217200000, 35.990968959263995], [1446303600000, 41.503710322545125], [1446390000000, 43.49569752719525], [1446476400000, 40.86965014899378], [1446562800000, 39.92158776263387], [1446649200000, 38.733932784721475], [1446735600000, 42.86214880516919], [1446822000000, 36.9767643226167], [1446908400000, 40.715208370235125], [1446994800000, 44.8478974501234], [1447081200000, 37.30511269551753], [1447167600000, 38.983022788876205], [1447254000000, 37.37295328414216], [1447340400000, 41.45322270689272], [1447426800000, 40.23482848951481], [1447513200000, 43.594071315206264], [1447599600000, 38.909023391544395], [1447686000000, 42.8975639903261], [1447772400000, 44.59283436046041], [1447858800000, 48.97728418194366], [1447945200000, 42.70598358049236], [1448031600000, 40.56539009509475], [1448118000000, 37.8835054421516], [1448204400000, 43.12225381237141], [1448290800000, 38.57393619608483], [1448377200000, 39.78664446499174], [1448463600000, 44.02862788439261], [1448550000000, 44.4594796280489], [1448636400000, 42.089643237739615], [1448722800000, 35.38966195074076], [1448809200000, 41.54369601778861], [1448895600000, 36.49318956542403], [1448982000000, 41.504420090552784], [1449068400000, 36.44941342175014], [1449154800000, 40.277637055380474], [1449241200000, 41.538005641885164], [1449327600000, 36.69133427373051], [1449414000000, 40.6723704726671], [1449500400000, 37.905916543187544], [1449586800000, 42.435998258338216], [1449673200000, 37.57210435309687], [1449759600000, 49.005174474851266], [1449846000000, 44.60449377809967], [1449932400000, 41.720910313105186], [1450018800000, 42.14327087940252], [1450105200000, 39.461288345030695], [1450191600000, 36.54122252931636], [1450278000000, 36.75423779198303], [1450364400000, 38.93823142702478], [1450450800000, 43.982952656733715], [1450537200000, 41.452782569745615], [1450623600000, 40.31186083915457], [1450710000000, 42.520301713442784], [1450796400000, 41.7600302127836], [1450882800000, 45.262331612630675], [1450969200000, 41.89896179432726], [1451055600000, 44.37434550360318], [1451142000000, 35.92085202473592], [1451228400000, 36.78451976288322], [1451314800000, 37.549328952372385], [1451401200000, 41.57005078902681], [1451487600000, 39.86019203645858]];
+
+
+  Highcharts.stockChart('waterLevelForecastingGraph', {
+
+    rangeSelector: {
+      selected: 4
+    },
+
+    credits: {
+      enabled: false
+    },
+
+    chart: {
+      zoomType: 'x',
+      backgroundColor: 'rgba(255, 255, 255, 0)',
+      plotBorderWidth: 1,
+      plotBackgroundColor: 'rgba(0, 0, 0, 0.1)',
+      ignoreHiddenSeries: false,
+      marginRight: 28,
+      marginleft: -6,
+      resetZoomButton: {
+        align: 'right',
+        verticalAlign: 'top'
+      }
+    },
+
+    title: {
+      text: 'Water Level Forecasting(dm/d)',
+      style: {
+        color: '#FFFFFF',
+      }
+    },
+
+    xAxis: {
+      type: 'datetime',
+      crosshairs: true,
+      lineColor: '#FFFFFF',
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      }
+    },
+
+    yAxis: {
+      labels: {
+        style: {
+          color: '#FFFFFF'
+        }
+      },
+      plotLines: [{
+        value: 0,
+        width: 2,
+        color: 'silver'
+      }]
+    },
+
+    plotOptions: {
+      areaspline: {
+        marker: {
+          radius: 2
+        },
+        lineWidth: 1,
+        states: {
+          hover: {
+            lineWidth: 1
+          }
+        },
+        threshold: null
+      }
+    },
+    series: {
+      showInNavigator: true
+    },
+
+    navigator: {
+      xAxis: {
+        lineColor: '#FFFFFF',
+        labels: {
+          style: {
+            color: '#FFFFFF'
+          }
+        }
+      },
+    },
+
+    rangeSelector: {
+      buttonTheme: { // styles for the buttons
+        fill: 'none',
+        stroke: 'none',
+        'stroke-width': 0,
+        r: 8,
+        style: {
+          color: '#ffffff',
+          fontWeight: 'bold'
+        },
+        states: {
+          hover: {},
+          select: {
+            fill: '#666666',
+            style: {
+              color: 'white'
+            }
+          }
+          // disabled: { ... }
+        }
+      },
+      inputBoxBorderColor: 'white',
+      inputBoxWidth: 120,
+      inputBoxHeight: 18,
+      inputStyle: {
+        color: '#ffffff',
+        fontWeight: 'bold'
+      },
+      labelStyle: {
+        color: 'white',
+        fontWeight: 'bold'
+      },
+      selected: 1
+    },
+
+    tooltip: {
+      valueDecimals: 2,
+      shared: true,
+      valueSuffix: 'dm'
+    },
+
+    series: [{
+      name: 'Water Level',
+      data: averages,
+      zIndex: 5, // 控制显示层叠
+      marker: {
+        enabled: true,
+        fillColor: 'white',
+        lineWidth: 2,
+        lineColor: Highcharts.getOptions().colors[0],
+        radius: 5
+      }
+    }, {
+      name: 'Range',
+      data: ranges,
+      type: 'arearange',
+      lineWidth: 0,
+      linkedTo: ':previous', // 与上一个数据列进行关联，或者直接赋值 0
+      color: Highcharts.getOptions().colors[0],
+      fillOpacity: 0.5,
+      zIndex: 3,
+      marker: {
+        enabled: false
+      }
+    }]
+  });
+
+</script>
